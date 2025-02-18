@@ -100,6 +100,8 @@ class NetworkModel_org():
         self.escape = [] #correlated stimulus input 
         self.task_condition()
         self.condact = {k:[] for k in self.actdict.keys()} 
+        self.Xthresh = 5 #bit
+        self.record = defaultdict(list)
         
     def task_condition(self):
         pass
@@ -182,9 +184,15 @@ class NetworkModel_org():
         tmp = [(key,np.sum(np.isin(ptn, list(val)))) for key,val in self.HFnet.pattern.items()]
         if len(tmp) == 0:
             return np.array([0,0],dtype=int), []
-        key,_ = max(tmp, key = lambda x: x[1])
+        key,val = max(tmp, key = lambda x: x[1])
+        self.record[int(np.where(HCstate > 0)[0][0])].append(val)
         HF = sorted(list(self.HFnet.pattern[key]))
-        return np.array(key.split("-"), dtype=float), HF
+        inf_ = np.array(key.split("-"), dtype=float)
+        if val < len(ptn) - self.Xthresh:
+            inf_[0] += int(np.max([len(d) for d in self.stmdict.values()]))/10
+            return inf_, HF
+        else:
+            return inf_, HF
 
     def preplay(self, HC, key):
         inftrans = [np.array(key.split("-"), dtype=float)]
@@ -436,7 +444,7 @@ class NetworkModel_org():
                 HCtrans = HCtrans[:(clen+1)*2]
                 nextcond = self.plan_action(int(infcond[-1,0]), NGinf)
                 infcond = np.vstack((infcond, np.array([[nextcond, np.nan]])))           
-                return self.actremapping(infcond, HC, HCtrans, key) #action driven remapping
+                return self.exploration(infcond, HC, HCtrans, key) #action driven remapping
             return HC, np.abs(exprwd), infcond, HCtrans, key
         else:        #no converged context
             if not stmremap:
@@ -445,7 +453,7 @@ class NetworkModel_org():
             else:
                 return [],[],[],[],[]
 
-    def actremapping(self, infcond, HC, HCtrans, key):
+    def exploration(self, infcond, HC, HCtrans, key):
         exprwd = 0
         pivot = HCtrans[-2]
         HCstate = np.zeros(self.HCnet.shape[0])
@@ -459,7 +467,7 @@ class NetworkModel_org():
         HCtrans2 = HCtrans[:-1] + [HC_]
         self.condact[int(infcond[-2,0])][int(infcond[-2,1])] = infcond[-1,0]
         self.learn_HC2HC(HCtrans2[-2:], 1, incontext = True)
-        print("actremapping", np.array(HCtrans).squeeze(), np.array(HCtrans2).squeeze())
+        print("exploration", np.array(HCtrans).squeeze(), np.array(HCtrans2).squeeze())
         return HC, exprwd, infcond, HCtrans2, key
                     
     def plan_action(self, cond, NGinf):
@@ -527,7 +535,7 @@ class NetworkModel_org():
     def stmremapping(self, HC_, HCng, cond, HCtrans_, infcond_):
         arg = np.where(self.HCnet[:,HC_]>self.HCthresh+self.initW)[0]
         if self.verbose:
-            print("stmremap",HCng, HC_, arg)
+            print("remapping",HCng, HC_, arg)
         arg = arg[arg != HCng]
         arg = np.append(np.random.permutation(arg),HC_)
         for x in arg:
