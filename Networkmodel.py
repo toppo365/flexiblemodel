@@ -444,7 +444,7 @@ class NetworkModel_org():
                 HCtrans = HCtrans[:(clen+1)*2]
                 nextcond = self.plan_action(int(infcond[-1,0]), NGinf)
                 infcond = np.vstack((infcond, np.array([[nextcond, np.nan]])))           
-                return self.exploration(infcond, HC, HCtrans, key) #action driven remapping
+                return self.exploration(infcond, HC, HCtrans, key) #history driven remapping
             return HC, np.abs(exprwd), infcond, HCtrans, key
         else:        #no converged context
             if not stmremap:
@@ -537,7 +537,7 @@ class NetworkModel_org():
         if self.verbose:
             print("remapping",HCng, HC_, arg)
         arg = arg[arg != HCng]
-        arg = np.append(np.random.permutation(arg),HC_)
+        arg = np.append(np.random.permutation(arg), HC_)
         for x in arg:
             HC, exprwd, infcond, HCtrans, key = self.think(cond = cond, HCprev = [[x]], stmremap = x != arg[-1])
             if len(HC) == 0:
