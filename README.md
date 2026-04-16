@@ -8,7 +8,7 @@ https://doi.org/10.7554/eLife.106506.2
 Environment:
 python 3.10
 
-Requirements
+Requirements:
 numpy
 scipy
 matplotlib
