@@ -12,4 +12,4 @@ python 3.10　　
 　
 ## Requirements:　　
 
-numpy, scipy, matplotlib, collections, pickle, copy
+jupyter, numpy, scipy, matplotlib, collections, pickle, copy
